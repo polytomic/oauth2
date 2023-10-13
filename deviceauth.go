@@ -3,6 +3,7 @@ package oauth2
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -58,6 +59,8 @@ func (c *DeviceAuthResponse) UnmarshalJSON(data []byte) error {
 	type Alias DeviceAuthResponse
 	aux := &struct {
 		ExpiresIn int64 `json:"expires_in"`
+		// workaround misspelling of verification_uri
+		VerificationURL string `json:"verification_url"`
 		*Alias
 	}{
 		Alias: (*Alias)(c),
@@ -67,6 +70,9 @@ func (c *DeviceAuthResponse) UnmarshalJSON(data []byte) error {
 	}
 	if aux.ExpiresIn != 0 {
 		c.Expiry = time.Now().UTC().Add(time.Second * time.Duration(aux.ExpiresIn))
+	}
+	if c.VerificationURI == "" {
+		c.VerificationURI = aux.VerificationURL
 	}
 	return nil
 }
@@ -88,6 +94,10 @@ func (c *Config) DeviceAuth(ctx context.Context, opts ...AuthCodeOption) (*Devic
 }
 
 func retrieveDeviceAuth(ctx context.Context, c *Config, v url.Values) (*DeviceAuthResponse, error) {
+	if c.Endpoint.DeviceAuthURL == "" {
+		return nil, errors.New("endpoint missing DeviceAuthURL")
+	}
+
 	req, err := http.NewRequest("POST", c.Endpoint.DeviceAuthURL, strings.NewReader(v.Encode()))
 	if err != nil {
 		return nil, err
@@ -95,6 +105,7 @@ func retrieveDeviceAuth(ctx context.Context, c *Config, v url.Values) (*DeviceAu
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
+	t := time.Now()
 	r, err := internal.ContextClient(ctx).Do(req)
 	if err != nil {
 		return nil, err
@@ -116,11 +127,17 @@ func retrieveDeviceAuth(ctx context.Context, c *Config, v url.Values) (*DeviceAu
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal %s", err)
 	}
+
+	if !da.Expiry.IsZero() {
+		// Make a small adjustment to account for time taken by the request
+		da.Expiry = da.Expiry.Add(-time.Since(t))
+	}
+
 	return da, nil
 }
 
-// Poll tries to exchange an device code for a token.
-func (c *Config) Poll(ctx context.Context, da *DeviceAuthResponse, opts ...AuthCodeOption) (*Token, error) {
+// DeviceAccessToken polls the server to exchange a device code for a token.
+func (c *Config) DeviceAccessToken(ctx context.Context, da *DeviceAuthResponse, opts ...AuthCodeOption) (*Token, error) {
 	if !da.Expiry.IsZero() {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithDeadline(ctx, da.Expiry)
@@ -148,6 +165,7 @@ func (c *Config) Poll(ctx context.Context, da *DeviceAuthResponse, opts ...AuthC
 	}
 
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():

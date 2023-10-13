@@ -1,6 +1,6 @@
 module golang.org/x/oauth2
 
-go 1.17
+go 1.18
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
@@ -11,6 +11,6 @@ require (
 require (
 	cloud.google.com/go/compute v1.20.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/net v0.16.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )

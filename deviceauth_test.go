@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,9 +33,13 @@ func TestDeviceAuthResponseMarshalJson(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			begin := time.Now()
 			gotBytes, err := json.Marshal(tc.response)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if strings.Contains(tc.want, "expires_in") && time.Since(begin) > 999*time.Millisecond {
+				t.Skip("test ran too slowly to compare `expires_in`")
 			}
 			got := string(gotBytes)
 			if got != tc.want {
@@ -63,12 +68,13 @@ func TestDeviceAuthResponseUnmarshalJson(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			begin := time.Now()
 			got := DeviceAuthResponse{}
 			err := json.Unmarshal([]byte(tc.data), &got)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !cmp.Equal(got, tc.want, cmpopts.IgnoreUnexported(DeviceAuthResponse{}), cmpopts.EquateApproxTime(time.Second)) {
+			if !cmp.Equal(got, tc.want, cmpopts.IgnoreUnexported(DeviceAuthResponse{}), cmpopts.EquateApproxTime(time.Second+time.Since(begin))) {
 				t.Errorf("want=%#v, got=%#v", tc.want, got)
 			}
 		})
@@ -83,7 +89,7 @@ func ExampleConfig_DeviceAuth() {
 		panic(err)
 	}
 	fmt.Printf("please enter code %s at %s\n", response.UserCode, response.VerificationURI)
-	token, err := config.Poll(ctx, response)
+	token, err := config.DeviceAccessToken(ctx, response)
 	if err != nil {
 		panic(err)
 	}
