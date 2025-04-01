@@ -35,6 +35,12 @@ var Cern = oauth2.Endpoint{
 	TokenURL: "https://oauth.web.cern.ch/OAuth/Token",
 }
 
+// Discord is the endpoint for Discord.
+var Discord = oauth2.Endpoint{
+	AuthURL:  "https://discord.com/oauth2/authorize",
+	TokenURL: "https://discord.com/api/oauth2/token",
+}
+
 // Facebook is the endpoint for Facebook.
 var Facebook = oauth2.Endpoint{
 	AuthURL:  "https://www.facebook.com/v3.2/dialog/oauth",
@@ -62,8 +68,9 @@ var GitHub = oauth2.Endpoint{
 
 // GitLab is the endpoint for GitLab.
 var GitLab = oauth2.Endpoint{
-	AuthURL:  "https://gitlab.com/oauth/authorize",
-	TokenURL: "https://gitlab.com/oauth/token",
+	AuthURL:       "https://gitlab.com/oauth/authorize",
+	TokenURL:      "https://gitlab.com/oauth/token",
+	DeviceAuthURL: "https://gitlab.com/oauth/authorize_device",
 }
 
 // Google is the endpoint for Google.
@@ -143,6 +150,12 @@ var NokiaHealth = oauth2.Endpoint{
 var Odnoklassniki = oauth2.Endpoint{
 	AuthURL:  "https://www.odnoklassniki.ru/oauth/authorize",
 	TokenURL: "https://api.odnoklassniki.ru/oauth/token.do",
+}
+
+// Patreon is the endpoint for Patreon.
+var Patreon = oauth2.Endpoint{
+	AuthURL:  "https://www.patreon.com/oauth2/authorize",
+	TokenURL: "https://www.patreon.com/api/oauth2/token",
 }
 
 // PayPal is the endpoint for PayPal.
