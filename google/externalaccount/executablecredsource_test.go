@@ -8,13 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"sort"
+	"slices"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 type testEnvironment struct {
@@ -254,14 +251,12 @@ func TestExecutableCredentialGetEnvironment(t *testing.T) {
 
 			ecs.env = &tt.environment
 
-			// This Transformer sorts a []string.
-			sorter := cmp.Transformer("Sort", func(in []string) []string {
-				out := append([]string(nil), in...) // Copy input to avoid mutating it
-				sort.Strings(out)
-				return out
-			})
+			got := ecs.executableEnvironment()
+			slices.Sort(got)
+			want := tt.expectedEnvironment
+			slices.Sort(want)
 
-			if got, want := ecs.executableEnvironment(), tt.expectedEnvironment; !cmp.Equal(got, want, sorter) {
+			if !slices.Equal(got, want) {
 				t.Errorf("Incorrect environment received.\nReceived: %s\nExpected: %s", got, want)
 			}
 		})
@@ -614,7 +609,7 @@ func TestRetrieveExecutableSubjectTokenSuccesses(t *testing.T) {
 }
 
 func TestRetrieveOutputFileSubjectTokenNotJSON(t *testing.T) {
-	outputFile, err := ioutil.TempFile("testdata", "result.*.json")
+	outputFile, err := os.CreateTemp("testdata", "result.*.json")
 	if err != nil {
 		t.Fatalf("Tempfile failed: %v", err)
 	}
@@ -763,7 +758,7 @@ var cacheFailureTests = []struct {
 func TestRetrieveOutputFileSubjectTokenFailureTests(t *testing.T) {
 	for _, tt := range cacheFailureTests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputFile, err := ioutil.TempFile("testdata", "result.*.json")
+			outputFile, err := os.CreateTemp("testdata", "result.*.json")
 			if err != nil {
 				t.Fatalf("Tempfile failed: %v", err)
 			}
@@ -866,7 +861,7 @@ var invalidCacheTests = []struct {
 func TestRetrieveOutputFileSubjectTokenInvalidCache(t *testing.T) {
 	for _, tt := range invalidCacheTests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputFile, err := ioutil.TempFile("testdata", "result.*.json")
+			outputFile, err := os.CreateTemp("testdata", "result.*.json")
 			if err != nil {
 				t.Fatalf("Tempfile failed: %v", err)
 			}
@@ -970,8 +965,7 @@ var cacheSuccessTests = []struct {
 func TestRetrieveOutputFileSubjectTokenJwt(t *testing.T) {
 	for _, tt := range cacheSuccessTests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			outputFile, err := ioutil.TempFile("testdata", "result.*.json")
+			outputFile, err := os.CreateTemp("testdata", "result.*.json")
 			if err != nil {
 				t.Fatalf("Tempfile failed: %v", err)
 			}

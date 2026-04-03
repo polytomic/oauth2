@@ -1,8 +1,5 @@
 module golang.org/x/oauth2
 
-go 1.23.0
+go 1.24.0
 
-require (
-	cloud.google.com/go/compute/metadata v0.3.0
-	github.com/google/go-cmp v0.5.9
-)
+require cloud.google.com/go/compute/metadata v0.3.0
